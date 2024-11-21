@@ -1,0 +1,104 @@
+#include <SoftwareSerial.h>  // For HC-05 Bluetooth module
+#include <SD.h>              // For SD card module
+#include <TMRpcm.h>          // For audio playback
+
+// Pin definitions
+const int chipSelect = 4;   // Chip Select pin for the SD card module
+const int speakerPin = 9;   // Speaker pin for audio output
+
+// Bluetooth setup (HC-05 connected to pins 10 and 11)
+SoftwareSerial BTSerial(10, 11); // RX, TX pins for Bluetooth
+
+// Initialize TMRpcm for audio playback
+TMRpcm audio;
+
+void setup() {
+  // Serial communication initialization
+  Serial.begin(9600);
+  BTSerial.begin(9600);
+
+  Serial.println("System Initializing...");
+
+  // SD card initialization
+  if (!SD.begin(chipSelect)) {
+    Serial.println("Error: SD Card Initialization Failed!");
+    while (1); // Stop if SD card fails to initialize
+  } else {
+    Serial.println("SD Card Initialized Successfully.");
+  }
+
+  // Initialize audio playback system
+  audio.speakerPin = speakerPin; // Set the speaker pin
+  audio.setVolume(12);           // Set volume (range: 0-12)
+
+  Serial.println("System Ready! Waiting for Bluetooth Commands...");
+}
+
+void loop() {
+  // Check for incoming Bluetooth data
+  if (BTSerial.available()) {
+    String command = BTSerial.readStringUntil('\n');  // Read incoming Bluetooth command
+    command.trim();                                   // Remove leading/trailing whitespace
+    command.toLowerCase();                           // Convert to lowercase for consistency
+
+    Serial.print("Received Command: ");
+    Serial.println(command);
+
+    // Execute command
+    handleCommand(command);
+  }
+}
+
+// Function to handle commands and play audio
+void handleCommand(String command) {
+  // Stop any ongoing playback
+  if (audio.isPlaying()) {
+    audio.stopPlayback();
+  }
+
+  // Match Bluetooth command to audio file
+  if (command == "hello") {
+    playAudio("a.wav");
+  } else if (command == "how are you") {
+    playAudio("b.wav");
+  } else if (command == "what is your name") {
+    playAudio("c.wav");
+  } else if (command == "what are you") {
+    playAudio("d.wav");
+  } else if (command == "what is ai") {
+    playAudio("e.wav");
+  } else if (command == "what is your purpose") {
+    playAudio("f.wav");
+  } else if (command == "tell me a joke") {
+    playAudio("g.wav");
+  } else if (command == "describe ai") {
+    playAudio("h.wav");
+  } else if (command == "who created you") {
+    playAudio("i.wav");
+  } else if (command == "i love you") {
+    playAudio("k.wav");
+  } else if (command == "what is the future of ai") {
+    playAudio("l.wav");
+  } else if (command == "goodbye") {
+    playAudio("m.wav");
+  } else {
+    // Unknown command
+    Serial.println("Error: Unknown Command! Playing default error sound.");
+    playAudio("error.wav");
+  }
+}
+
+// Function to play an audio file
+void playAudio(const char *filename) {
+  // Check if the audio file exists on the SD card
+  if (SD.exists(filename)) {
+    Serial.print("Playing File: ");
+    Serial.println(filename);
+    audio.play(filename); // Play the audio file
+  } else {
+    // If file not found, play default error sound
+    Serial.print("Error: File Not Found - ");
+    Serial.println(filename);
+    audio.play("error.wav");
+  }
+}
